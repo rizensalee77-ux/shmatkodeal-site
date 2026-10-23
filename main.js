@@ -35,7 +35,7 @@ function apply(l){lang=l;try{localStorage.setItem('lang',l)}catch(e){}
  $$('[data-i]').forEach(e=>e.textContent=t(e.dataset.i));
  $$('.lang button').forEach(b=>{b.classList.toggle('on',b.dataset.l===l);b.setAttribute('aria-pressed',b.dataset.l===l)});
  $('#svc option[value=""]').textContent=t('f_sel');renderCat();renderTrust();renderContacts();
- $('#mt').innerHTML=[1,2].map(()=>['s1','s2','s3','s1','s2','s3'].map(k=>`<span>${t(k)}</span>`).join('')).join('');}
+ $('#mt').innerHTML=[1,2].map(()=>['s1','s2','s3','s1','s2','s3'].map(k=>`<span>${t(k)}</span>`).join('')).join('');(window.SD&&SD.hooks||[]).forEach(f=>f())}
 $$('.lang button').forEach(b=>b.onclick=()=>apply(b.dataset.l));
 const nav=$('header nav'),bg=$('#burger');
 function menu(o){nav.classList.toggle('open',o);bg.setAttribute('aria-expanded',o);document.body.style.overflow=o?'hidden':''}
@@ -47,8 +47,10 @@ addEventListener('resize',()=>{if(innerWidth>960)menu(false)});
 const f=$('#f'),st=$('#st'),loadT=Date.now(),E=f.elements;
 const digits=v=>v.replace(/\D/g,'').length;
 const okc=v=>{v=v.trim();return /^@?[A-Za-z][A-Za-z0-9_]{4,31}$/.test(v)||/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)||(/^[+\d][\d\s().-]{5,}$/.test(v)&&digits(v)>=7&&digits(v)<=15)};
-const rules={name:v=>v.trim().length>=2,contact:okc,service:v=>!!v,message:v=>v.trim().length>=10};
-const emap={name:'e_name',contact:'e_ct',service:'e_srv',message:'e_msg'};
+const okig=v=>/^@?[A-Za-z0-9._]{2,30}$/.test(v)||/^(https?:\/\/)?(www\.)?instagram\.com\/[A-Za-z0-9._]{2,30}\/?(\?.*)?$/i.test(v);
+const okl=v=>okig(v)||/^(https?:\/\/)?([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/\S*)?$/.test(v);
+const rules={link:v=>!v.trim()||okl(v),name:v=>v.trim().length>=2,contact:okc,service:v=>!!v,message:v=>v.trim().length>=10};
+const emap={link:'e_link',name:'e_name',contact:'e_ct',service:'e_srv',message:'e_msg'};
 function show(c,k){st.className=c;st.textContent=t(k)}
 let busy=false;
 f.onsubmit=async e=>{e.preventDefault();if(busy)return;let first=null;
@@ -57,10 +59,10 @@ f.onsubmit=async e=>{e.preventDefault();if(busy)return;let first=null;
  let last=0;try{last=+localStorage.getItem('last')||0}catch(x){}
  if(Date.now()-last<30000){show('no','er_wait');return}
  const btn=f.querySelector('button');busy=true;btn.disabled=true;show('ok','sending');
- try{const r=await fetch('/.netlify/functions/telegram-lead',{method:'POST',headers:{'Content-Type':'application/json'},
-  body:JSON.stringify({name:E.name.value,contact:E.contact.value,service:E.service.value,budget:E.budget.value,deadline:E.deadline.value,message:E.message.value,website:E.website.value,t:loadT,lang})});
+ try{const r=await fetch('/api/lead',{method:'POST',headers:{'Content-Type':'application/json'},
+  body:JSON.stringify({name:E.name.value,contact:E.contact.value,service:E.service.value,type:'request',link:E.link.value,budget:E.budget.value,deadline:E.deadline.value,message:E.message.value,website:E.website.value,t:loadT,lang})});
   const j=await r.json().catch(()=>({}));
-  if(r.ok&&j.ok){try{localStorage.setItem('last',Date.now())}catch(x){}f.reset();show('ok','ok')}
+  if(r.ok&&j.ok){try{localStorage.setItem('last',Date.now())}catch(x){}f.reset();if(window.SD&&SD.done){st.className='';st.textContent='';SD.done()}else show('ok','ok')}
   else show('no','er_'+(['invalid','rate','fast','not_configured'].includes(j.code)?j.code:'x'));
  }catch(x){show('no','er_x')}finally{busy=false;btn.disabled=false}};
 // тема
@@ -69,4 +71,5 @@ $('#th').onclick=()=>{const n=root.dataset.theme==='dark'?'light':'dark';root.da
 if(matchMedia('(pointer:fine)').matches){const hr=$('.hero');hr.addEventListener('pointermove',e=>{const r=hr.getBoundingClientRect();hr.style.setProperty('--mx',e.clientX-r.left+'px');hr.style.setProperty('--my',e.clientY-r.top+'px')})}
 new IntersectionObserver(([e])=>$('.hero').classList.toggle('off',!e.isIntersecting)).observe($('.hero'));
 const hd=$('header'),sc=()=>hd.classList.toggle('sc',scrollY>10);sc();addEventListener('scroll',sc,{passive:true});
+window.SD={t,esc,L,SV,loadT,okl,okig,hooks:[],get lang(){return lang}};
 apply(lang);watch();})();
