@@ -57,7 +57,7 @@ f.onsubmit=async e=>{e.preventDefault();if(busy)return;let first=null;
  let last=0;try{last=+localStorage.getItem('last')||0}catch(x){}
  if(Date.now()-last<30000){show('no','er_wait');return}
  const btn=f.querySelector('button');busy=true;btn.disabled=true;show('ok','sending');
- try{const r=await fetch('/api/lead',{method:'POST',headers:{'Content-Type':'application/json'},
+ try{const r=await fetch('/.netlify/functions/telegram-lead',{method:'POST',headers:{'Content-Type':'application/json'},
   body:JSON.stringify({name:E.name.value,contact:E.contact.value,service:E.service.value,budget:E.budget.value,deadline:E.deadline.value,message:E.message.value,website:E.website.value,t:loadT,lang})});
   const j=await r.json().catch(()=>({}));
   if(r.ok&&j.ok){try{localStorage.setItem('last',Date.now())}catch(x){}f.reset();show('ok','ok')}
